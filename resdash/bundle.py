@@ -4,6 +4,7 @@ import json
 from pathlib import Path
 
 from resdash import __version__
+from resdash.deck import extract_deck_params
 from resdash.discovery import discover
 from resdash.summary import extract_vectors
 
@@ -24,7 +25,7 @@ def build_bundle(runs_folder: str, realization_regex: str | None = None,
             "realization": c.realization,
             "folder": c.folder,
             "files": {"summary": True, "rft": bool(c.rft), "prt": bool(c.prt), "data": bool(c.data)},
-            "params": {},
+            "params": extract_deck_params(c),
             "vectors": extract_vectors(c.smspec, max_points=max_points),
             "rft": [],
             "qc": {},
