@@ -1,0 +1,20 @@
+:root{--bg:#101418;--panel:#1a2027;--ink:#e8eaed;--muted:#9aa4ad;--accent:#4fc3f7;--line:#2a323c}
+*{box-sizing:border-box}
+body{margin:0;font:14px/1.45 "Segoe UI",Arial,sans-serif;background:var(--bg);color:var(--ink)}
+header{padding:14px 20px;border-bottom:1px solid var(--line)}
+h1{font-size:18px;margin:0 0 4px}
+#meta{color:var(--muted);font-size:12px}
+#tabs button{background:none;border:1px solid var(--line);color:var(--muted);padding:6px 14px;margin-right:6px;cursor:pointer;border-radius:4px}
+#tabs button.active{color:var(--accent);border-color:var(--accent)}
+main{padding:16px 20px}
+.tab{display:none}.tab.active{display:block}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:12px;margin-bottom:14px}
+table{border-collapse:collapse;width:100%;font-size:13px}
+th,td{border:1px solid var(--line);padding:4px 8px;text-align:right;white-space:nowrap}
+th{color:var(--muted);cursor:pointer}td:first-child,th:first-child{text-align:left}
+select,input[type=text],input[type=checkbox]{background:var(--bg);color:var(--ink);border:1px solid var(--line);border-radius:4px;padding:4px}
+.controls{display:flex;flex-wrap:wrap;gap:14px;align-items:center;margin-bottom:10px}
+.controls label{color:var(--muted);font-size:12px;display:flex;gap:4px;align-items:center}
+.plot{width:100%;min-height:420px}
+.muted{color:var(--muted)}
+button.action{background:var(--accent);border:none;color:#08222e;font-weight:600;padding:6px 12px;border-radius:4px;cursor:pointer}

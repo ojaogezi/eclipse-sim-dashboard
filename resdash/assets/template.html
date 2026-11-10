@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>ECLIPSE Ensemble Dashboard</title>
+<style>/*__APP_CSS__*/</style>
+</head>
+<body>
+<header>
+  <h1>ECLIPSE Ensemble Dashboard</h1>
+  <div id="meta"></div>
+  <nav id="tabs">
+    <button data-tab="overview" class="active">Overview</button>
+    <button data-tab="timeseries">Time Series</button>
+    <button data-tab="parameters">Parameters</button>
+    <button data-tab="rft">RFT</button>
+    <button data-tab="qc">QC</button>
+  </nav>
+</header>
+<main>
+  <section id="overview" class="tab active"></section>
+  <section id="timeseries" class="tab"></section>
+  <section id="parameters" class="tab"></section>
+  <section id="rft" class="tab"></section>
+  <section id="qc" class="tab"></section>
+</main>
+<script>/*__PLOTLY__*/</script>
+<script id="bundle-data" type="application/json">/*__BUNDLE__*/</script>
+<script>/*__APP_JS__*/</script>
+</body>
+</html>
