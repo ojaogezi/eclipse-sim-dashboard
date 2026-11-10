@@ -1,0 +1,33 @@
+__pycache__/
+*.pyc
+.pytest_cache/
+dashboard.html
+bundle.json
+demo/bundle.json
+.streamlit/
+
+# Real ECLIPSE output must never be committed
+*.UNSMRY
+*.SMSPEC
+*.PRT
+*.PRTX
+*.DBPRTX
+*.RFT
+*.RSSPEC
+*.EGRID
+*.INIT
+*.UNRST
+*.DBG
+*.ECLE
+*.ECLEND
+*.h5
+*.INSPEC
+*.MSG
+*.RTEMSG
+*.TELE
+*.DATA
+*.GRDECL
+*.INC
+
+# The synthetic demo ensemble is intentionally committed
+!demo/runs/**
