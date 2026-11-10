@@ -7,6 +7,7 @@ from resdash import __version__
 from resdash.deck import extract_deck_params
 from resdash.discovery import discover
 from resdash.prt import extract_prt
+from resdash.rft import extract_rft
 from resdash.summary import extract_vectors
 
 SCHEMA_VERSION = 1
@@ -28,7 +29,7 @@ def build_bundle(runs_folder: str, realization_regex: str | None = None,
             "files": {"summary": True, "rft": bool(c.rft), "prt": bool(c.prt), "data": bool(c.data)},
             "params": extract_deck_params(c),
             "vectors": extract_vectors(c.smspec, max_points=max_points),
-            "rft": [],
+            "rft": extract_rft(c.rft, max_surveys=max_surveys),
             "qc": extract_prt(c.prt),
         })
     return {
