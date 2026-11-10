@@ -1,0 +1,18 @@
+RUNSPEC
+TITLE
+ 'synthetic demo'
+/
+SCHEDULE
+WCONPROD
+ 'P1' 'ORAT' 1000.0 4* 30 /
+ /
+WCONINJE
+ 'I1' 'WATER' 'OPEN' 'RATE' 5000.0 1* 500 /
+ /
+MULTIPLY
+ 'PORO' 1.0 /
+ 'PERMX' 1.0 /
+ /
+DATES
+ 1 'JAN' 2030 /
+ /

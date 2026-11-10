@@ -7,11 +7,13 @@ from resdash.summary import extract_vectors, round6, thin_minmax
 def test_roundtrip_and_units(tmp_path):
     days = [0.0, 30.0, 61.0, 91.0]
     fopr = [0.0, 9500.0, 9100.0, 8800.0]
+    wopr = [v / 3 for v in fopr]
     write_summary(
         "DEMO1",
         datetime.datetime(2020, 1, 1),
         days,
-        {"FOPR": {"unit": "SM3/DAY", "data": fopr}},
+        {"FOPR": {"unit": "SM3/DAY", "data": fopr},
+         "WOPR:P1": {"unit": "SM3/DAY", "data": wopr}},
         tmp_path,
     )
     assert (tmp_path / "DEMO1.SMSPEC").exists()
@@ -22,6 +24,7 @@ def test_roundtrip_and_units(tmp_path):
     assert out["DATE"][0] == "2020-01-01" and out["DATE"][-1] == "2020-04-01"
     assert out["FOPR"]["unit"].upper().startswith("SM3")
     assert [round6(v) for v in out["FOPR"]["data"]] == [round6(v) for v in fopr]
+    assert [round6(v) for v in out["WOPR:P1"]["data"]] == [round6(v) for v in wopr]
 
 
 def test_thin_minmax_preserves_peaks():

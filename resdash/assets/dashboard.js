@@ -128,9 +128,142 @@ function renderTimeSeries() {
   draw();
 }
 
+/* ---------- Parameters ---------- */
+function numericParams() {
+  const keys = new Set();
+  CASES.forEach(c => Object.entries(c.params || {})
+    .forEach(([k, v]) => { if (typeof v === 'number' && isFinite(v)) keys.add(k); }));
+  return [...keys].sort();
+}
+function spearman(x, y) {
+  const rank = a => { const idx = [...a.keys()].sort((i, j) => a[i] - a[j]);
+    const r = new Array(a.length); let i = 0;
+    while (i < idx.length) { let j = i;
+      while (j + 1 < idx.length && a[idx[j + 1]] === a[idx[i]]) j++;
+      const v = (i + j) / 2 + 1; for (let k = i; k <= j; k++) r[idx[k]] = v; i = j + 1; }
+    return r; };
+  const rx = rank(x), ry = rank(y), n = x.length;
+  const mx = rx.reduce((s, v) => s + v, 0) / n, my = ry.reduce((s, v) => s + v, 0) / n;
+  let num = 0, dx = 0, dy = 0;
+  for (let i = 0; i < n; i++) { num += (rx[i] - mx) * (ry[i] - my); dx += (rx[i] - mx) ** 2; dy += (ry[i] - my) ** 2; }
+  return num / Math.sqrt(dx * dy || 1);
+}
+function renderParameters() {
+  const endpoints = ['FOPT', 'FGPT', 'FWPT', 'FWIT', 'FGIT'];
+  $('parameters').innerHTML =
+    '<div class="panel"><div class="controls">' +
+    '<label>End-point <select id="pa-endpoint">' + endpoints.map(k => `<option>${k}</option>`).join('') + '</select></label>' +
+    '<label>Parameter <select id="pa-param"></select></label></div>' +
+    '<div class="controls"><div id="pa-tornado" class="plot" style="height:380px"></div>' +
+    '<div id="pa-scatter" class="plot" style="height:380px"></div></div></div>' +
+    '<div class="panel"><table id="pa-table"></table></div>';
+  const params = numericParams();
+  $('pa-param').innerHTML = params.map(k => `<option>${esc(k)}</option>`).join('');
+  const table = () => {
+    const keys = [...new Set(CASES.flatMap(c => Object.keys(c.params || {})))].sort();
+    $('pa-table').innerHTML = '<tr><th>case</th>' + keys.map(k => `<th>${esc(k)}</th>`).join('') + '</tr>' +
+      CASES.map(c => '<tr><td>' + esc(c.name) + '</td>' +
+        keys.map(k => { const v = (c.params || {})[k]; return `<td>${v == null ? '–' : esc(v)}</td>`; }).join('') + '</tr>').join('');
+  };
+  const draw = () => {
+    const end = $('pa-endpoint').value;
+    const ys = CASES.map(c => lastVal(c, end));
+    const pairs = CASES.map((c, i) => ({ c, y: ys[i] })).filter(p => p.y != null);
+    const cors = params.map(p => {
+      const xs = pairs.map(pr => pr.c.params[p]);
+      const yy = pairs.map(pr => pr.y);
+      return xs.every(v => typeof v === 'number') && new Set(xs).size > 1 ? { p, rho: spearman(xs, yy) } : null;
+    }).filter(Boolean).sort((a, b) => Math.abs(b.rho) - Math.abs(a.rho));
+    Plotly.newPlot('pa-tornado', [{
+      type: 'bar', orientation: 'h', x: cors.map(c => c.rho), y: cors.map(c => c.p),
+      marker: { color: cors.map(c => c.rho >= 0 ? '#4fc3f7' : '#ef9a9a') },
+    }], { ...LAYOUT, title: `Spearman ρ vs ${end}`, yaxis: { ...LAYOUT.yaxis, autorange: 'reversed' } },
+      { displayModeBar: false });
+    const p = $('pa-param').value;
+    Plotly.newPlot('pa-scatter', [{
+      x: pairs.map(pr => pr.c.params[p]), y: pairs.map(pr => pr.y),
+      mode: 'markers', text: pairs.map(pr => pr.c.name),
+      marker: { size: 9, color: '#4fc3f7' },
+    }], { ...LAYOUT, xaxis: { ...LAYOUT.xaxis, title: p }, yaxis: { ...LAYOUT.yaxis, title: end } },
+      { displayModeBar: false });
+    table();
+  };
+  $('pa-endpoint').onchange = draw; $('pa-param').onchange = draw; draw();
+}
+
+/* ---------- RFT ---------- */
+function renderRFT() {
+  const wells = [...new Set(CASES.flatMap(c => (c.rft || []).map(s => s.well)))].sort();
+  if (!wells.length) {
+    $('rft').innerHTML = '<div class="panel muted">No RFT data available for these cases ' +
+      '(cases run without RFT output, or .RFT files not found next to the summary files).</div>';
+    return;
+  }
+  $('rft').innerHTML =
+    '<div class="panel"><div class="controls">' +
+    '<label>Well <select id="rft-well">' + wells.map(w => `<option>${esc(w)}</option>`).join('') + '</select></label>' +
+    '<label>Date <select id="rft-date"></select></label></div>' +
+    '<div class="controls" id="rft-cases"></div><div id="rft-plot" class="plot"></div></div>';
+  const datesFor = w => [...new Set(CASES.flatMap(c => (c.rft || [])
+    .filter(s => s.well === w).map(s => s.date)))].sort();
+  const draw = () => {
+    const w = $('rft-well').value, d = $('rft-date').value;
+    const traces = [...document.querySelectorAll('.rft-case:checked')].map(cb => CASES[+cb.value])
+      .map(c => (c.rft || []).find(s => s.well === w && s.date === d))
+      .filter(Boolean).map(s => ({ name: s.well + ' ' + s.date, x: s.pressure, y: s.depth, mode: 'lines+markers' }));
+    Plotly.newPlot('rft-plot', traces,
+      { ...LAYOUT, yaxis: { ...LAYOUT.yaxis, autorange: 'reversed', title: 'depth' },
+        xaxis: { ...LAYOUT.xaxis, title: 'pressure' } }, { responsive: true });
+  };
+  const refreshDates = () => {
+    const w = $('rft-well').value;
+    $('rft-date').innerHTML = datesFor(w).map(d => `<option>${d}</option>`).join('');
+    $('rft-cases').innerHTML = '<label class="muted">Cases</label>' +
+      CASES.map((c, i) => (c.rft || []).some(s => s.well === w) ?
+        `<label><input type="checkbox" class="rft-case" value="${i}" checked> ${esc(c.name)}</label>` : '').join('');
+    document.querySelectorAll('.rft-case').forEach(cb => cb.onchange = draw);
+    draw();
+  };
+  $('rft-well').onchange = refreshDates; $('rft-date').onchange = draw;
+  refreshDates();
+}
+
+/* ---------- QC ---------- */
+function renderQC() {
+  const hasQC = CASES.some(c => c.qc && Object.keys(c.qc).length);
+  $('qc').innerHTML = hasQC
+    ? '<div class="panel"><table id="qc-table"></table></div>' +
+      '<div class="panel"><div id="qc-mb" class="plot"></div></div>' +
+      '<div class="panel"><h3 class="muted">FIP by region</h3><div id="qc-fip"></div></div>'
+    : '<div class="panel muted">No QC data (.PRT) found for these cases.</div>';
+  if (!hasQC) return;
+  $('qc-table').innerHTML =
+    '<tr><th>case</th><th>MB error max (%)</th><th>timesteps</th><th>CPU (h)</th></tr>' +
+    CASES.map(c => `<tr><td>${esc(c.name)}</td><td>${fmt(c.qc.mb_error_max, 2)}</td>` +
+      `<td>${c.qc.timesteps ?? '–'}</td><td>${fmt(c.qc.cpu_hours, 3)}</td></tr>`).join('');
+  Plotly.newPlot('qc-mb', [{
+    type: 'bar', x: CASES.map(c => c.name), y: CASES.map(c => c.qc.mb_error_max ?? null),
+    marker: { color: '#ef9a9a' },
+  }], { ...LAYOUT, yaxis: { ...LAYOUT.yaxis, title: 'MB error max (%)' } }, { displayModeBar: false });
+  const regions = [...new Set(CASES.flatMap(c => Object.keys((c.qc.fip_regions || {}))))].sort();
+  $('qc-fip').innerHTML = '<div class="controls"><label>Region <select id="qc-region">' +
+    regions.map(r => `<option>${r}</option>`).join('') + '</select></label></div><div id="qc-fip-plot" class="plot"></div>';
+  const drawFip = () => {
+    const r = $('qc-region').value;
+    Plotly.newPlot('qc-fip-plot', ['oil_sm3', 'gas_sm3', 'water_sm3'].map(ph => ({
+      type: 'bar', name: ph.replace('_sm3', ''), x: CASES.map(c => c.name),
+      y: CASES.map(c => (c.qc.fip_regions || {})[r] ? c.qc.fip_regions[r][ph] ?? 0 : null),
+    })), { ...LAYOUT, barmode: 'group', yaxis: { ...LAYOUT.yaxis, title: `region ${r} (SM3)` } },
+      { displayModeBar: false });
+  };
+  $('qc-region').onchange = drawFip; drawFip();
+}
+
 /* ---------- boot ---------- */
 $('meta').textContent =
   `${CASES.length} cases · generated ${BUNDLE.generated_utc} · source ${BUNDLE.source_folder}`;
 renderOverview();
 renderTimeSeries();
-window.DASH = { renderParameters: () => {}, renderRFT: () => {}, renderQC: () => {} };
+renderParameters();
+renderRFT();
+renderQC();

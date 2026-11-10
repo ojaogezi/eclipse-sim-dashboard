@@ -26,7 +26,11 @@ def write_summary(case: str, start: datetime.datetime, days, vectors, out_dir: P
     with _chdir(out_dir):
         w = Summary.writer(case, start, 1, 1, 1)
         for key, meta in vectors.items():
-            w.add_variable(key, unit=meta.get("unit", ""))
+            var, _, wg = key.partition(":")  # "WOPR:P1" -> variable WOPR, well P1
+            if wg:
+                w.add_variable(var, wgname=wg, unit=meta.get("unit", ""))
+            else:
+                w.add_variable(var, unit=meta.get("unit", ""))
         for i, d in enumerate(days):
             t = w.add_t_step(i + 1, float(d))
             for key, meta in vectors.items():
