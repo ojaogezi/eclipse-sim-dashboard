@@ -6,6 +6,7 @@ from pathlib import Path
 from resdash import __version__
 from resdash.deck import extract_deck_params
 from resdash.discovery import discover
+from resdash.prt import extract_prt
 from resdash.summary import extract_vectors
 
 SCHEMA_VERSION = 1
@@ -28,7 +29,7 @@ def build_bundle(runs_folder: str, realization_regex: str | None = None,
             "params": extract_deck_params(c),
             "vectors": extract_vectors(c.smspec, max_points=max_points),
             "rft": [],
-            "qc": {},
+            "qc": extract_prt(c.prt),
         })
     return {
         "schema": SCHEMA_VERSION,

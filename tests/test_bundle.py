@@ -27,7 +27,8 @@ def test_build_and_validate(tmp_path):
     c1 = b["cases"][0]
     assert c1["files"] == {"summary": True, "rft": False, "prt": False, "data": False}
     assert "FOPR" in c1["vectors"] and c1["vectors"]["FOPR"]["unit"] == "SM3/DAY"
-    assert c1["rft"] == [] and c1["qc"] == {} and c1["params"] == {}
+    assert c1["rft"] == [] and c1["params"] == {}
+    assert c1["qc"]["mb_error_max"] is None and c1["qc"]["fip_regions"] == {}
     assert b["source_folder"] == str(tmp_path)
 
     out = tmp_path / "bundle.json"
