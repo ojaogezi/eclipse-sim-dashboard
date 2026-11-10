@@ -1,0 +1,21 @@
+name: ci
+on: [push, pull_request]
+jobs:
+  test:
+    strategy:
+      matrix:
+        os: [windows-latest, ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+      - run: python -m pytest tests -q
+      - run: python demo/make_demo.py --out demo_runs --bundle demo_bundle.json
+      - run: python build_dashboard.py demo_runs -o ci_dashboard.html
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dashboard-${{ matrix.os }}
+          path: ci_dashboard.html
